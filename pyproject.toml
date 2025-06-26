@@ -1,0 +1,26 @@
+[project]
+name = "gromit"
+version = "0.1.0"
+description = "Gromit – Local AI Tool for Transcribing Meetings"
+readme = "README.md"
+authors = [
+    { name = "Dmytro Durach", email = "979567+durach@users.noreply.github.com" }
+]
+requires-python = ">=3.9,<3.12"
+dependencies = [
+    "faster-whisper",
+    "click",
+    "rich",
+    "numpy",
+    "soundfile",
+    "pyannote.audio",
+    "python-dotenv",
+    "pydub",
+]
+
+[project.scripts]
+gromit = "gromit.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
