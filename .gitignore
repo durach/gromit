@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# E2E test fixtures (generated, cached locally)
+tests/e2e_fixtures/
+
+# Claude Code
+.claude/
+
+# Environment variables
+.env
+
+# Stage-1 tile-detection working artifacts (frames, labels, weights, reports)
+data/tiles/
+
+# macOS Finder metadata
+.DS_Store

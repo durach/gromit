@@ -1,0 +1,29 @@
+# Participant roster for `gromit nametag`. Pass it with --roster PATH.
+#
+# permanent — people who attend regularly; matched as a candidate in every
+#             video, regardless of which meeting it is. This is the only
+#             section the `gromit nametag` CLI reads.
+#
+# There is deliberately no place here for one-off guests. Pass an occasional
+# attendee on the command line for that run only:
+#
+#     gromit nametag <folder> --roster roster.yaml --guest "Solomia Kravets"
+#
+# `--guest` is repeatable, and it keeps a guest who appeared in one meeting
+# from becoming a candidate in an unrelated one.
+#
+# Names must match what Google Meet shows on the tile: gromit reads the
+# on-screen name-strip via OCR and matches it against this list. Meet
+# truncates long names on screen ("Yaroslav Vyshn…"); gromit recovers the
+# full form by front-anchored prefix match, so write the FULL name here,
+# not the truncated one you might see on screen.
+#
+# Anyone not listed here and not passed as a --guest — e.g. a reading of
+# "Nadiya Ivanets", who never attends — is kept verbatim in the output and
+# flagged for human review, rather than being snapped to the nearest roster
+# name. That is the point of an open-set matcher: an unlisted person must
+# never be silently mislabeled as someone who is listed.
+permanent:
+  - Yaroslav Vyshnevetsky
+  - Solomiya Verbytska
+  - Mykola H

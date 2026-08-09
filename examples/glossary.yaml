@@ -1,0 +1,36 @@
+# Per-project glossary. Pass it with --glossary PATH.
+#
+# Each entry teaches gromit one term that ASR gets wrong:
+#   canonical — the correct spelling, as it should appear in the transcript
+#   category  — person | term | company | product  (person names are treated
+#               as one unit; category only affects hotword-budget priority,
+#               see below — it changes nothing about matching)
+#   note      — free text for humans; gromit never reads it
+#   misheard  — spellings the engine actually produced for this term.
+#               `crosscheck` flags a span when it finds one of these and
+#               suggests the canonical form; `glossary-merge` appends new
+#               ones as you confirm corrections in the review page. A term
+#               with no known mishearings yet still ships with `misheard: []`
+#               so `crosscheck` has an empty list to append to later.
+#
+# `canonical` values also become faster-whisper "hotwords" at transcribe
+# time (see `gromit transcribe --glossary`): a nudge towards the right
+# spelling before the model ever runs. Whisper's prompt budget is small, so
+# not every term fits — `category` decides what survives the cut. Priority
+# is person > company > product > term (names are what ASR mangles worst;
+# generic terms are also the ones `crosscheck` can still repair afterwards
+# via their `misheard` list below, so they can afford to be dropped first).
+terms:
+  - canonical: "release checklist"
+    category: term
+    note: "pre-release step list"
+    misheard: ["реліз чекліст", "реліс чикліст"]
+
+  - canonical: "Вишневецький"
+    category: person
+    note: "surname; ASR drops the leading В (roster form: Yaroslav Vyshnevetsky)"
+    misheard: ["Вишневський", "Кишневецький"]
+
+  - canonical: "стендап"
+    category: term
+    misheard: []

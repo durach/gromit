@@ -1,0 +1,93 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gromit"
+version = "0.1.0"
+description = "Privacy-first local AI transcription with speaker diarization"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "librosa>=0.10.0",
+    "soundfile>=0.12.0",
+    # <2.11: torch 2.11+ pulls the CUDA 13 runtime, but CTranslate2 (which
+    # faster-whisper uses for inference) links against libcublas.so.12. With a
+    # CUDA 13 torch, `gromit transcribe --device cuda` fails at load time with
+    # "Library libcublas.so.12 is not found". CPU/MPS are unaffected, so this
+    # only bites on NVIDIA machines — and no test catches it, because the tests
+    # mock the model.
+    "torch>=2.0.0,<2.11",
+    # torchaudio must track torch's minor exactly (its compiled extension is
+    # ABI-bound to it). torchaudio 2.11.0 declares NO torch dependency, so a
+    # resolver will happily pair it with torch 2.10 and then fail at import
+    # with "Could not load this library: _torchaudio.abi3.so". Pin in step.
+    "torchaudio>=2.0.0,<2.11",
+    "faster-whisper>=1.0.0",
+    "pyannote.audio>=3.1.0",
+    "numpy>=1.24.0",
+    # <5: OpenCV 5.0 dropped cv2.CascadeClassifier from the top-level namespace
+    # (and did not move it to cv2.objdetect); nametag's tile detection uses it.
+    "opencv-python-headless>=4.8,<5",
+    "pyyaml>=6.0",
+    "ruamel.yaml>=0.18",
+    "easyocr>=1.7",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+# Apple Vision OCR for nametag Stage 2b (macOS only; better than EasyOCR on these
+# crops). Optional so non-macOS installs still work with EasyOCR alone.
+vision = [
+    "ocrmac>=1.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-dotenv>=0.5.2",
+    "ruff>=0.16,<0.17",
+    "edge-tts>=6.1.0",
+    "pydub>=0.25.1",
+    "taskipy>=1.12.0",
+    "socksio>=1.0",
+]
+
+[project.scripts]
+gromit = "gromit.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gromit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+env_files = [".env"]
+filterwarnings = [
+    "ignore::DeprecationWarning:pydub.*",
+    "ignore::DeprecationWarning:audioread.*",
+    "ignore:Environment variable TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD.*:UserWarning",
+    "ignore:std.*degrees of freedom.*:UserWarning",
+    "ignore:CUDA initialization.*:UserWarning",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+# =============================================================================
+# Taskipy Configuration
+# =============================================================================
+[tool.taskipy.tasks]
+# Keep these three over the same paths: a `format` narrower than `lint` fights itself,
+# tools/ ships in the repo, so it gets the same treatment as src/.
+lint = "ruff check src/ tests/ tools/"
+fix = "ruff check src/ tests/ tools/ --fix"
+format = "ruff format src/ tests/ tools/"
+test = "pytest -v"
+test-slow = "pytest -v --run-slow"
+test-e2e = "pytest tests/e2e/ -v --run-e2e"
+test-all = "pytest -v --run-slow --run-e2e"
+check = "task lint && task test"
