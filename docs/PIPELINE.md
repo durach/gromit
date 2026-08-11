@@ -100,9 +100,14 @@ Everything the pipeline writes — `.gromit.json`, `.flags.json`, `.named.vtt`,
 
 ## The per-project glossary
 
-`crosscheck`, `review`, and `transcribe` all take a `--glossary PATH`. It is a
-file you keep with your own project — gromit has no built-in knowledge of any
-project, any organisation, or any person. A worked example with comments is
+`crosscheck` and `transcribe` take a `--glossary PATH` (repeatable), and
+`glossary-merge` takes the one it updates. `review` does **not** — the
+suggestions on its page come from `flags.json`, which `crosscheck` already
+resolved against the glossary. Note that stage 1's warning stands: the flag
+exists on `transcribe`, and you still should not use it there.
+
+The glossary is a file you keep with your own project — gromit has no built-in
+knowledge of any project, any organisation, or any person. A worked example with comments is
 [`../examples/glossary.yaml`](../examples/glossary.yaml). Format:
 
 ```yaml

@@ -10,6 +10,13 @@ Docs for humans: [`README.md`](README.md) is the user manual,
 architecture doc before changing anything structural — it is written against the
 current source and names the real modules and functions.
 
+Docs for agents: [`docs/AGENTS.md`](docs/AGENTS.md) is the operating manual for
+an agent *running* gromit on a user's recording (preflight, the human-in-the-loop
+boundary, failure modes that must not be "fixed"), wrapped for Claude Code as
+[`skills/gromit/SKILL.md`](skills/gromit/SKILL.md). Neither is about *developing*
+gromit — that is this file. Keep AGENTS.md pointer-heavy: it deliberately does
+not restate PIPELINE.md's command sequence, so the two cannot drift apart.
+
 ## Quick Reference
 
 ```bash

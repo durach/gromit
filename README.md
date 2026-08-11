@@ -486,6 +486,28 @@ Write full names, not what Meet shows: Meet truncates long names on the tile
 match. Anyone not listed is kept verbatim and flagged, never snapped to the
 closest listed name.
 
+## Using Gromit from an AI agent
+
+[`docs/AGENTS.md`](docs/AGENTS.md) is an operating manual for an AI agent asked
+to run Gromit on someone's recording: what to check before starting a job that
+may take hours, where the pipeline hands back to a human, and which
+alarming-looking output is normal and must not be "fixed". It is plain markdown
+— point any agent at it.
+
+For Claude Code, [`skills/gromit/SKILL.md`](skills/gromit/SKILL.md) wraps it as a
+skill that loads itself when a task involves Gromit. Symlink it so `git pull`
+keeps it current, and install it **personally** rather than into a project —
+recordings normally live outside this checkout, and a project skill would only
+load while you happened to be working inside the repo:
+
+```bash
+mkdir -p ~/.claude/skills
+ln -s "$PWD/skills/gromit" ~/.claude/skills/gromit   # from the repo root
+```
+
+The skill locates the checkout by resolving its own symlink, so it keeps working
+if you move the repo — re-point the link and nothing else changes.
+
 ## Development
 
 ```bash
