@@ -424,9 +424,10 @@ def nametag(
     if summary["kept"] and summary["needs_review"]:
         console.print(
             f"[yellow]{summary['needs_review']} cues need review[/yellow] — "
-            f"no on-screen name could be resolved for them, so they are labelled "
-            f"Unknown in the output. The sampled frames are kept at "
-            f"{summary['cache_dir']} so you can check them by eye."
+            f"either no on-screen name could be read (labelled Unknown in the "
+            f"output) or the name read is not one of your candidates (kept "
+            f"verbatim, never snapped to a roster entry). The sampled frames "
+            f"are kept at {summary['cache_dir']} so you can check them by eye."
         )
 
 

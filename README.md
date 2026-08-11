@@ -45,10 +45,8 @@ folding your corrections into a glossary so the next meeting comes out better.
   from `nametag` (Meet video) or from you.
 - **Large models are slow on CPU.** The default `large-v3` on a CPU-only
   machine can take longer than the meeting itself. See `--model` and `--device`.
-- **No cloud, no daemon, no telemetry.** No `gromit` command uploads your
-  recording anywhere, which also means no server does the heavy lifting for
-  you. (If you want a server to, `tools/wsl-transcribe.sh` will copy the file
-  to a GPU host you name — that is you choosing, not Gromit.)
+- **No server does the heavy lifting for you.** Local-only cuts both ways: the
+  transcription runs on the machine in front of you, at that machine's speed.
 
 ## Prerequisites
 
@@ -191,7 +189,7 @@ gromit transcribe --from-file parts.txt -o full_day.txt
 | Flag | Meaning |
 | --- | --- |
 | `-f`, `--from-file PATH` | Read the input list from a text file, one path per line |
-| `-o`, `--output PATH` | Transcript path (default `<input>.gromit.txt`) |
+| `-o`, `--output PATH` | Transcript path (see the default naming rules below the table) |
 | `-l`, `--language TEXT` | `en`, `uk`, `ru`, or `auto` (default `auto`) |
 | `-m`, `--model TEXT` | `tiny`, `base`, `small`, `medium`, `large-v3` (default `large-v3`) |
 | `-s`, `--speakers INTEGER` | Expected speaker count — improves diarization when you know it |
@@ -199,6 +197,11 @@ gromit transcribe --from-file parts.txt -o full_day.txt
 | `-v`, `--verbose` | Progress detail |
 | `--duration FLOAT` | Process only the first N seconds — for trying things out |
 | `--glossary PATH` | Glossary YAML whose canonical forms become Whisper hotwords (repeatable). **Read the warning in [the pipeline section](#the-transcript-quality-pipeline) before using this.** |
+
+Without `-o`, the transcript name comes from the input: `meeting.gromit.txt` for
+a single file, `part1_combined.gromit.txt` for several (the first input's stem),
+and `parts.gromit.txt` for `--from-file parts.txt`. Name it yourself when the
+combined form is not what you want.
 
 The `.gromit.json` is written alongside the `.txt` regardless of `-o`: an
 explicit `-o transcript.txt` still produces `transcript.gromit.json`.
@@ -242,13 +245,10 @@ into `FOLDER`, if you also pass one).
   name, first one wins.
 - Missing either one is an error: `need one .mp4 and one .vtt in <folder>`.
 - The two stems need **not** match, and nothing warns you when a folder holds
-  more than one candidate — the alphabetically first simply wins, silently. When
-  that ambiguity matters, use `--video`/`--vtt` instead of relying on sort
-  order. If
-  you keep both `2026-01-15-board.vtt` and `2026-01-15-board-uk-asr.vtt` in the
-  folder, `-` sorts before `.`, so the `-uk-asr.vtt` is the one used. Keep one
-  `.mp4` and one non-`.named` `.vtt` per meeting folder and the rule never
-  matters.
+  more than one candidate — the alphabetically first simply wins, silently. Keep
+  one `.mp4` and one non-`.named` `.vtt` per meeting folder and that never
+  matters; where it does, use `--video`/`--vtt` rather than relying on sort
+  order.
 
 For every caption cue, Gromit samples frames from the video, reads the name
 strip on the speaking participant's tile with OCR, votes across the frames, and
@@ -268,6 +268,8 @@ Candidates come from `--roster` (people who attend regularly) and `--guest`
 
 | Flag | Meaning |
 | --- | --- |
+| `--video PATH` | The recording, when it does not share a stem with the captions. Requires `--vtt` |
+| `--vtt PATH` | The Google Meet caption file. Requires `--video` |
 | `-g`, `--guest TEXT` | An occasional attendee's name (repeatable) |
 | `--roster PATH` | `roster.yaml` of permanent members |
 | `-v`, `--verbose` | Print the vote per cue instead of a progress bar |
@@ -279,6 +281,22 @@ and Apple Vision and takes the better match; elsewhere it uses EasyOCR alone.
 Names that match nobody in your candidate list are kept verbatim rather than
 snapped to the nearest roster entry — an unlisted attendee should never be
 silently relabelled as someone who was there.
+
+A cue counts as **needing review** when no on-screen name could be read at all
+(it is labelled `Unknown` in the output) or when the name read does not match
+your candidates (kept verbatim, per the rule above). When any cue needs review,
+`nametag` says so, and the sampled frames are kept instead of deleted so you can
+check the calls by eye:
+
+```
+Wrote 2026-01-15-board.named.vtt (+ .named.txt) — 412 cues, best-of-both (EasyOCR + Apple Vision)
+3 cues need review — … The sampled frames are kept at
+/tmp/gromit-nametag/2026-01-15-board-4f9c1ab2 so you can check them by eye.
+```
+
+Both outcomes are ordinary, not failures: a cue can be `Unknown` because nobody
+was on screen, and a verbatim name is usually just a guest you did not pass with
+`--guest`. Add the missing name and re-run, or fix the few cues by hand.
 
 ### `gromit crosscheck`
 
@@ -541,11 +559,6 @@ fails. If you still see the error, force the device explicitly with
 
 Some warning noise from dependencies is expected and harmless:
 
-- **`PySoundFile failed. Trying audioread instead.`** and the librosa
-  deprecation notice — these came from loading video containers through
-  librosa's deprecated fallback, and are fixed: video is now extracted to a
-  temporary WAV with ffmpeg first. If you still see them, you are on an old
-  build.
 - **`TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD detected`** and **`std(): degrees of
   freedom is <= 0`** — both come from inside pyannote (its model loading uses
   `weights_only=False`, and short audio segments trip the std warning). They
