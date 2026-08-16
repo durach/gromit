@@ -141,7 +141,7 @@ gromit transcribe "$DIR/$STEM.mp4" --language uk -o "$DIR/$STEM.gromit.txt"
 #
 #   Faster on a CPU-only machine — hand this one step to a CUDA box you can ssh
 #   into (see "Optional: a remote GPU worker" below):
-#   WSL_HOST=user@gpu-worker "$GROMIT/tools/wsl-transcribe.sh" "$DIR" --language uk
+#   WSL_HOST=user@host "$GROMIT/tools/wsl-transcribe.sh" "$DIR" --language uk
 
 # --- 2. (optional) speaker labels for the review page ---
 gromit nametag "$DIR" --guest "Solomiya Verbytska" --guest "Yaroslav Vyshnevetsky"
@@ -182,13 +182,14 @@ pulls `<stem>.gromit.{txt,json}` back into the meeting folder, and deletes the
 remote copy.
 
 ```bash
-WSL_HOST=user@gpu-worker WSL_REPO=~/projects/gromit \
+WSL_HOST=user@host WSL_REPO=~/projects/gromit \
   tools/wsl-transcribe.sh /path/to/meetings/2026-01-15-board --language uk
 ```
 
-- `WSL_HOST` (default `user@gpu-worker`) — any ssh target with a CUDA-capable
-  gromit install. There is nothing WSL-, VPN- or vendor-specific about it; the
-  name is historical.
+- `WSL_HOST` (**required**) — any ssh target with a CUDA-capable gromit install.
+  There is nothing WSL-, VPN- or vendor-specific about it; the name is
+  historical. There is no default: unset, the script says so by name instead of
+  spending an ssh timeout on a host you never meant to reach.
 - `WSL_REPO` (default `~/projects/gromit`) — where the checkout and its `.venv`
   live on the worker.
 - The script fails loudly and early if the host is unreachable, rather than

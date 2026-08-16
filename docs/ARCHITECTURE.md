@@ -239,7 +239,7 @@ The `.txt` is for humans. The `.gromit.json` is the machine-readable artifact â€
 ### Optional: remote GPU
 
 `tools/wsl-transcribe.sh` pushes a meeting folder to a CUDA host over SSH
-(`WSL_HOST=user@gpu-worker`), runs `gromit transcribe` there, pulls the results
+(`WSL_HOST=user@host`, required), runs `gromit transcribe` there, pulls the results
 back and deletes the remote copy. It is a convenience wrapper around the same
 CLI, not a different code path.
 

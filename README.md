@@ -395,7 +395,8 @@ better, and a better glossary flags more of the next meeting's real errors.
 this is the slow step; `tools/wsl-transcribe.sh` will push the video to a
 remote CUDA machine over SSH, run `gromit transcribe` there, pull the results
 back and delete the remote copy. Point it at your own host with
-`WSL_HOST=user@gpu-worker`.
+`WSL_HOST=user@host` — the variable is required, and the script says so rather
+than guessing.
 
 > **Do not pass `--glossary` at this stage.** Measured on a real meeting:
 > hotwords of *any* size — a handful of terms was as bad as a whole glossary — collapsed transcript

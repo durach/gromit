@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
-# Push a meeting's video to the WSL CUDA worker, run `gromit transcribe`, pull
+# Push a meeting's video to a CUDA worker, run `gromit transcribe`, pull
 # the .gromit.{txt,json} back, and delete the remote copy (worker keeps nothing).
 #
-# Usage:  tools/wsl-transcribe.sh <meeting-dir> [extra gromit transcribe args…]
-# Example: tools/wsl-transcribe.sh /path/to/meetings/2026-01-15-board \
+# The worker was originally a WSL install — hence the script name and the WSL_*
+# variables, which are historical. Nothing here is WSL-specific: any ssh-reachable
+# machine with a CUDA-capable gromit checkout at WSL_REPO works.
+#
+# Usage:  WSL_HOST=user@host tools/wsl-transcribe.sh <meeting-dir> [extra gromit transcribe args…]
+# Example: WSL_HOST=user@host tools/wsl-transcribe.sh /path/to/meetings/2026-01-15-board \
 #            --glossary /path/to/meetings/glossary.yaml --language uk
 #
-# Env overrides: WSL_HOST (default user@gpu-worker), WSL_REPO (default ~/projects/gromit).
+# Env: WSL_HOST (required) — ssh target of the worker.
+#      WSL_REPO (default ~/projects/gromit) — the gromit checkout on that worker.
 set -euo pipefail
 
-WSL_HOST="${WSL_HOST:-user@gpu-worker}"
 WSL_REPO="${WSL_REPO:-~/projects/gromit}"
 
 die() { echo "wsl-transcribe: $*" >&2; exit 1; }
@@ -38,6 +42,8 @@ while [ $# -gt 0 ]; do
 done
 
 # Reachability check (loud failure before touching anything).
+[ -n "${WSL_HOST:-}" ] \
+  || die "WSL_HOST is not set — point it at an ssh-reachable CUDA worker (e.g. WSL_HOST=user@host)"
 ssh -o ConnectTimeout=15 "$WSL_HOST" true 2>/dev/null \
   || die "worker unreachable: $WSL_HOST (check SSH connectivity)"
 
