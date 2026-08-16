@@ -39,8 +39,8 @@ ffmpeg, CTranslate2, OpenCV, Apple Vision, the generated `review/index.html`
 (self-contained, no CDN reference) — runs on the machine and opens no socket.
 
 Outside `src/` there are two opt-in exceptions, and both belong to the user:
-`tools/wsl-transcribe.sh` rsyncs a recording over SSH to a GPU host named by
-`WSL_HOST`, and [`PIPELINE.md`](PIPELINE.md)'s stage 2½ has a human hand
+`tools/remote-transcribe.sh` rsyncs a recording over SSH to a GPU host named by
+`GROMIT_CUDA_WORKER`, and [`PIPELINE.md`](PIPELINE.md)'s stage 2½ has a human hand
 transcript text to an LLM of their choosing. Neither is invoked by any `gromit`
 command.
 
@@ -238,8 +238,8 @@ The `.txt` is for humans. The `.gromit.json` is the machine-readable artifact �
 
 ### Optional: remote GPU
 
-`tools/wsl-transcribe.sh` pushes a meeting folder to a CUDA host over SSH
-(`WSL_HOST=user@host`, required), runs `gromit transcribe` there, pulls the results
+`tools/remote-transcribe.sh` pushes a meeting folder to a CUDA host over SSH
+(`GROMIT_CUDA_WORKER=user@host`, required), runs `gromit transcribe` there, pulls the results
 back and deletes the remote copy. It is a convenience wrapper around the same
 CLI, not a different code path.
 

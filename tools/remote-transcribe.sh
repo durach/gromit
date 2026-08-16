@@ -2,23 +2,23 @@
 # Push a meeting's video to a CUDA worker, run `gromit transcribe`, pull
 # the .gromit.{txt,json} back, and delete the remote copy (worker keeps nothing).
 #
-# The worker was originally a WSL install — hence the script name and the WSL_*
-# variables, which are historical. Nothing here is WSL-specific: any ssh-reachable
-# machine with a CUDA-capable gromit checkout at WSL_REPO works.
+# The worker is any machine you can ssh into that has a CUDA-capable gromit
+# checkout at GROMIT_CUDA_WORKER_REPO. This script is just ssh, rsync and a
+# remote temp dir — it holds no assumptions about the far end beyond that.
 #
-# Usage:  WSL_HOST=user@host tools/wsl-transcribe.sh <meeting-dir> [extra gromit transcribe args…]
-# Example: WSL_HOST=user@host tools/wsl-transcribe.sh /path/to/meetings/2026-01-15-board \
+# Usage:  GROMIT_CUDA_WORKER=user@host tools/remote-transcribe.sh <meeting-dir> [extra gromit transcribe args…]
+# Example: GROMIT_CUDA_WORKER=user@host tools/remote-transcribe.sh /path/to/meetings/2026-01-15-board \
 #            --glossary /path/to/meetings/glossary.yaml --language uk
 #
-# Env: WSL_HOST (required) — ssh target of the worker.
-#      WSL_REPO (default ~/projects/gromit) — the gromit checkout on that worker.
+# Env: GROMIT_CUDA_WORKER (required) — ssh target of the worker.
+#      GROMIT_CUDA_WORKER_REPO (default ~/projects/gromit) — gromit checkout there.
 set -euo pipefail
 
-WSL_REPO="${WSL_REPO:-~/projects/gromit}"
+GROMIT_CUDA_WORKER_REPO="${GROMIT_CUDA_WORKER_REPO:-~/projects/gromit}"
 
-die() { echo "wsl-transcribe: $*" >&2; exit 1; }
+die() { echo "remote-transcribe: $*" >&2; exit 1; }
 
-[ $# -ge 1 ] || die "usage: wsl-transcribe.sh <meeting-dir> [transcribe args…]"
+[ $# -ge 1 ] || die "usage: remote-transcribe.sh <meeting-dir> [transcribe args…]"
 MEETING_DIR="$1"; shift
 [ -d "$MEETING_DIR" ] || die "meeting dir not found: $MEETING_DIR"
 
@@ -42,18 +42,18 @@ while [ $# -gt 0 ]; do
 done
 
 # Reachability check (loud failure before touching anything).
-[ -n "${WSL_HOST:-}" ] \
-  || die "WSL_HOST is not set — point it at an ssh-reachable CUDA worker (e.g. WSL_HOST=user@host)"
-ssh -o ConnectTimeout=15 "$WSL_HOST" true 2>/dev/null \
-  || die "worker unreachable: $WSL_HOST (check SSH connectivity)"
+[ -n "${GROMIT_CUDA_WORKER:-}" ] \
+  || die "GROMIT_CUDA_WORKER is not set — point it at an ssh-reachable CUDA worker (e.g. GROMIT_CUDA_WORKER=user@host)"
+ssh -o ConnectTimeout=15 "$GROMIT_CUDA_WORKER" true 2>/dev/null \
+  || die "worker unreachable: $GROMIT_CUDA_WORKER (check SSH connectivity)"
 
-REMOTE="$(ssh "$WSL_HOST" 'mktemp -d /tmp/gromit-wsl.XXXXXX')"
+REMOTE="$(ssh "$GROMIT_CUDA_WORKER" 'mktemp -d /tmp/gromit-remote.XXXXXX')"
 [ -n "$REMOTE" ] || die "could not create remote temp dir"
-cleanup() { ssh "$WSL_HOST" "rm -rf '$REMOTE'" 2>/dev/null || true; }
+cleanup() { ssh "$GROMIT_CUDA_WORKER" "rm -rf '$REMOTE'" 2>/dev/null || true; }
 trap cleanup EXIT
 
-echo "wsl-transcribe: → $WSL_HOST:$REMOTE (uploading video…)"
-rsync -a "$MP4" "$WSL_HOST:$REMOTE/recording.mp4"
+echo "remote-transcribe: → $GROMIT_CUDA_WORKER:$REMOTE (uploading video…)"
+rsync -a "$MP4" "$GROMIT_CUDA_WORKER:$REMOTE/recording.mp4"
 
 # rsync each glossary to a safe remote name and rewrite the remote --glossary args.
 declare -a REMOTE_GLOSS_ARGS=()
@@ -61,23 +61,23 @@ i=0
 for g in "${GLOSSARY_LOCAL[@]:-}"; do
   [ -n "$g" ] || continue
   [ -f "$g" ] || die "glossary not found: $g"
-  rsync -a "$g" "$WSL_HOST:$REMOTE/glossary_${i}.yaml"
+  rsync -a "$g" "$GROMIT_CUDA_WORKER:$REMOTE/glossary_${i}.yaml"
   REMOTE_GLOSS_ARGS+=(--glossary "$REMOTE/glossary_${i}.yaml")
   i=$((i + 1))
 done
 
 # Run transcribe on the worker (CUDA). Proxy cleared so model/HF traffic works.
-echo "wsl-transcribe: transcribing on CUDA…"
-ssh "$WSL_HOST" \
-  "cd $WSL_REPO && ALL_PROXY= all_proxy= .venv/bin/gromit transcribe \
+echo "remote-transcribe: transcribing on CUDA…"
+ssh "$GROMIT_CUDA_WORKER" \
+  "cd $GROMIT_CUDA_WORKER_REPO && ALL_PROXY= all_proxy= .venv/bin/gromit transcribe \
      '$REMOTE/recording.mp4' ${REMOTE_GLOSS_ARGS[*]:-} ${PASS_ARGS[*]:-} \
      --device cuda -o '$REMOTE/recording.gromit.txt'" \
   || die "remote transcribe failed — nothing pulled back, remote cleaned on exit"
 
 # Pull results back under the meeting's own name.
-echo "wsl-transcribe: ← results"
-rsync -a "$WSL_HOST:$REMOTE/recording.gromit.txt"  "$MEETING_DIR/$STEM.gromit.txt"
-rsync -a "$WSL_HOST:$REMOTE/recording.gromit.json" "$MEETING_DIR/$STEM.gromit.json"
+echo "remote-transcribe: ← results"
+rsync -a "$GROMIT_CUDA_WORKER:$REMOTE/recording.gromit.txt"  "$MEETING_DIR/$STEM.gromit.txt"
+rsync -a "$GROMIT_CUDA_WORKER:$REMOTE/recording.gromit.json" "$MEETING_DIR/$STEM.gromit.json"
 
 # Rewrite hotwords_from from the ephemeral remote paths to the local glossary paths.
 if [ "${#GLOSSARY_LOCAL[@]}" -gt 0 ]; then
@@ -90,4 +90,4 @@ json.dump(d, open(path, "w"), ensure_ascii=False, indent=2)
 PY
 fi
 
-echo "wsl-transcribe: done → $MEETING_DIR/$STEM.gromit.{txt,json}"
+echo "remote-transcribe: done → $MEETING_DIR/$STEM.gromit.{txt,json}"

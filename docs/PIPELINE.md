@@ -9,7 +9,7 @@ transcribes better.
 local: the recording and its audio are read, transcribed, diarized and clipped
 on machines you control, and no gromit command uploads media anywhere. Two
 things in this runbook are exceptions you opt into explicitly, and both are
-called out where they appear: `tools/wsl-transcribe.sh` (stage 1) copies the
+called out where they appear: `tools/remote-transcribe.sh` (stage 1) copies the
 video over SSH to a GPU host **you** nominate, and stage 2½ below hands
 transcript **text** to whatever LLM you choose to point at it. Audio never
 leaves your machines either way — but stage 2½ is text, and if the LLM you use
@@ -23,7 +23,7 @@ Command-by-command reference: [`../README.md`](../README.md).
 
 | Stage | Command | Produces |
 |-------|---------|----------|
-| 1. Transcribe | `gromit transcribe` (optionally via `tools/wsl-transcribe.sh`) | `<stem>.gromit.{txt,json}` |
+| 1. Transcribe | `gromit transcribe` (optionally via `tools/remote-transcribe.sh`) | `<stem>.gromit.{txt,json}` |
 | 2. Cross-check | `gromit crosscheck` | `<stem>.flags.json` |
 | 2½. Triage (LLM session, optional — sends transcript text to an LLM) | — (no command; see below) | `corrections.yaml` + a small ask-batch |
 | 3. Review | `gromit review` | `review/index.html` + `review/clips/` |
@@ -141,7 +141,7 @@ gromit transcribe "$DIR/$STEM.mp4" --language uk -o "$DIR/$STEM.gromit.txt"
 #
 #   Faster on a CPU-only machine — hand this one step to a CUDA box you can ssh
 #   into (see "Optional: a remote GPU worker" below):
-#   WSL_HOST=user@host "$GROMIT/tools/wsl-transcribe.sh" "$DIR" --language uk
+#   GROMIT_CUDA_WORKER=user@host "$GROMIT/tools/remote-transcribe.sh" "$DIR" --language uk
 
 # --- 2. (optional) speaker labels for the review page ---
 gromit nametag "$DIR" --guest "Solomiya Verbytska" --guest "Yaroslav Vyshnevetsky"
@@ -175,23 +175,23 @@ Stage 1 is the only expensive step, and it is the only one that benefits from a
 GPU. Nothing in the pipeline requires one — `gromit transcribe` runs on CPU and
 on Apple Silicon, just more slowly.
 
-If you do have a CUDA machine you can `ssh` into, `tools/wsl-transcribe.sh`
+If you do have a CUDA machine you can `ssh` into, `tools/remote-transcribe.sh`
 automates the round trip: it pushes the meeting's video (and any `--glossary`
 files) to a temporary directory on the worker, runs `gromit transcribe` there,
 pulls `<stem>.gromit.{txt,json}` back into the meeting folder, and deletes the
 remote copy.
 
 ```bash
-WSL_HOST=user@host WSL_REPO=~/projects/gromit \
-  tools/wsl-transcribe.sh /path/to/meetings/2026-01-15-board --language uk
+GROMIT_CUDA_WORKER=user@host GROMIT_CUDA_WORKER_REPO=~/projects/gromit \
+  tools/remote-transcribe.sh /path/to/meetings/2026-01-15-board --language uk
 ```
 
-- `WSL_HOST` (**required**) — any ssh target with a CUDA-capable gromit install.
-  There is nothing WSL-, VPN- or vendor-specific about it; the name is
-  historical. There is no default: unset, the script says so by name instead of
-  spending an ssh timeout on a host you never meant to reach.
-- `WSL_REPO` (default `~/projects/gromit`) — where the checkout and its `.venv`
-  live on the worker.
+- `GROMIT_CUDA_WORKER` (**required**) — any ssh target with a CUDA-capable
+  gromit install; nothing about it is VPN- or vendor-specific. There is no
+  default: unset, the script says so by name instead of spending an ssh timeout
+  on a host you never meant to reach.
+- `GROMIT_CUDA_WORKER_REPO` (default `~/projects/gromit`) — where the checkout
+  and its `.venv` live on the worker.
 - The script fails loudly and early if the host is unreachable, rather than
   silently falling back.
 

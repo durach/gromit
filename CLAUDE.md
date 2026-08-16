@@ -48,7 +48,7 @@ gromit glossary-merge corrections.yaml --glossary g.yaml
 gromit nametag <meeting-dir> --guest "Name"     # <stem>.named.vtt + .named.txt
 
 # Optional: transcribe on a remote CUDA host instead of locally
-tools/wsl-transcribe.sh <meeting-dir> --language uk
+tools/remote-transcribe.sh <meeting-dir> --language uk
 ```
 
 ## Project Structure
@@ -85,7 +85,7 @@ independently useful:
 
 1. **Transcribe** — `gromit transcribe --glossary` → `<stem>.gromit.{txt,json}`
    (JSON carries word-level timing + confidence). Runs locally; on a CPU-only
-   machine `tools/wsl-transcribe.sh` can push the job to any ssh-reachable CUDA
+   machine `tools/remote-transcribe.sh` can push the job to any ssh-reachable CUDA
    host instead (push→run→pull→delete). Note the measured warning in
    `docs/PIPELINE.md` about transcribe-time hotwords.
 2. **`gromit crosscheck`** — aligns the gromit transcript with the Google Meet

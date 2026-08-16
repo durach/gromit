@@ -8,7 +8,7 @@ download model weights, once each: Whisper and pyannote from HuggingFace on
 your first `transcribe`, and EasyOCR's detection and recognition weights from
 EasyOCR's own host on your first `nametag`. Once those are cached everything
 runs offline. (The one other thing that touches the network is optional and
-yours: `tools/wsl-transcribe.sh` copies a recording over SSH to a GPU machine
+yours: `tools/remote-transcribe.sh` copies a recording over SSH to a GPU machine
 *you* nominate, and `docs/PIPELINE.md`'s optional stage 2½ sends transcript
 text to whatever LLM you point it at.)
 
@@ -392,10 +392,10 @@ The four commands above are a loop. Each meeting you review makes the glossary
 better, and a better glossary flags more of the next meeting's real errors.
 
 **Stage 1 — transcribe.** Produce `<stem>.gromit.json`. On a CPU-only laptop
-this is the slow step; `tools/wsl-transcribe.sh` will push the video to a
+this is the slow step; `tools/remote-transcribe.sh` will push the video to a
 remote CUDA machine over SSH, run `gromit transcribe` there, pull the results
 back and delete the remote copy. Point it at your own host with
-`WSL_HOST=user@host` — the variable is required, and the script says so rather
+`GROMIT_CUDA_WORKER=user@host` — the variable is required, and the script says so rather
 than guessing.
 
 > **Do not pass `--glossary` at this stage.** Measured on a real meeting:
@@ -602,7 +602,7 @@ both.
 
 Check which device was chosen with `-v`. On CPU, drop to `--model medium` or
 `--model small`, or move the job to a CUDA machine with
-`tools/wsl-transcribe.sh`.
+`tools/remote-transcribe.sh`.
 
 ## License
 
